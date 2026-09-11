@@ -1,4 +1,7 @@
-from config import db
+from config import db, bcrypt
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import validates
+
 try:
     from sqlalchemy_serializer import SerializerMixin
 except ModuleNotFoundError:
@@ -8,16 +11,16 @@ except ModuleNotFoundError:
 
         def to_dict(self, rules=(), only=(), exclude=()):
             excluded = set(exclude) if exclude else set()
-            if hasattr(self, 'serialize_rules') and self.serialize_rules:
+            if hasattr(self, "serialize_rules") and self.serialize_rules:
                 for r in self.serialize_rules:
-                    if r.startswith('-'):
+                    if r.startswith("-"):
                         excluded.add(r[1:])
             res = {}
-            if hasattr(self, '__table__'):
+            if hasattr(self, "__table__"):
                 for col in self.__table__.columns:
                     if col.name not in excluded:
                         res[col.name] = getattr(self, col.name)
-            if hasattr(self, '__mapper__'):
+            if hasattr(self, "__mapper__"):
                 for rel in self.__mapper__.relationships:
                     name = rel.key
                     if name not in excluded:
@@ -25,9 +28,9 @@ except ModuleNotFoundError:
                         if val is None:
                             res[name] = None
                         elif isinstance(val, list):
-                            res[name] = [item.to_dict() if hasattr(item, 'to_dict') else str(item) for item in val]
+                            res[name] = [item.to_dict() if hasattr(item, "to_dict") else str(item) for item in val]
                         else:
-                            res[name] = val.to_dict() if hasattr(val, 'to_dict') else str(val)
+                            res[name] = val.to_dict() if hasattr(val, "to_dict") else str(val)
             return res
 
 class User(db.Model, SerializerMixin):
