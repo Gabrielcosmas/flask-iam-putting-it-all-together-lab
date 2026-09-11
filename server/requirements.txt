@@ -1,0 +1,10 @@
+Flask
+Flask-SQLAlchemy
+Flask-RESTful
+Flask-Migrate
+Flask-CORS
+Flask-Bcrypt
+sqlalchemy-serializer
+pytest
+pytest-mock
+Faker
