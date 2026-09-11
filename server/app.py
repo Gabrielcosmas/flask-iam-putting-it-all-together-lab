@@ -5,6 +5,9 @@ from flask_restful import Resource
 from config import app, db, api
 from models import User, Recipe
 
+with app.app_context():
+    db.create_all()
+
 class Signup(Resource):
     def post(self):
         data = request.get_json()
