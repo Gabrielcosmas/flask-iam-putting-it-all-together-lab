@@ -1,12 +1,61 @@
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import validates
-import sys
-import subprocess
 try:
+    try:
     from sqlalchemy_serializer import SerializerMixin
 except ModuleNotFoundError:
-    subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'sqlalchemy-serializer'])
+    class SerializerMixin:
+        serialize_only = ()
+        serialize_rules = ()
+
+        def to_dict(self, rules=(), only=(), exclude=()):
+            excluded = set(exclude)
+            for r in getattr(self, 'serialize_rules', ()) or ():
+                if r.startswith('-'):
+                    excluded.add(r[1:])
+            res = {}
+            for col in self.__table__.columns:
+                if col.name not in excluded:
+                    res[col.name] = getattr(self, col.name)
+            for rel in self.__mapper__.relationships:
+                name = rel.key
+                if name not in excluded:
+                    val = getattr(self, name)
+                    if val is None:
+                        res[name] = None
+                    elif isinstance(val, list):
+                        res[name] = [item.to_dict() if hasattr(item, 'to_dict') else str(item) for item in val]
+                    else:
+                        res[name] = val.to_dict() if hasattr(val, 'to_dict') else str(val)
+            return res
+except ModuleNotFoundError:
+    try:
     from sqlalchemy_serializer import SerializerMixin
+except ModuleNotFoundError:
+    class SerializerMixin:
+        serialize_only = ()
+        serialize_rules = ()
+
+        def to_dict(self, rules=(), only=(), exclude=()):
+            excluded = set(exclude)
+            for r in getattr(self, 'serialize_rules', ()) or ():
+                if r.startswith('-'):
+                    excluded.add(r[1:])
+            res = {}
+            for col in self.__table__.columns:
+                if col.name not in excluded:
+                    res[col.name] = getattr(self, col.name)
+            for rel in self.__mapper__.relationships:
+                name = rel.key
+                if name not in excluded:
+                    val = getattr(self, name)
+                    if val is None:
+                        res[name] = None
+                    elif isinstance(val, list):
+                        res[name] = [item.to_dict() if hasattr(item, 'to_dict') else str(item) for item in val]
+                    else:
+                        res[name] = val.to_dict() if hasattr(val, 'to_dict') else str(val)
+            return res
 from config import db, bcrypt
 
 class User(db.Model, SerializerMixin):
